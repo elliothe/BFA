@@ -518,19 +518,7 @@ def main():
                                  param.grad.clone().cpu().data.numpy(),
                                  epoch + 1,
                                  bins='tensorflow')
-
-        # ## Log the weight and bias distribution
-        for name, module in net.named_modules():
-            name = name.replace('.', '/')
-            class_name = str(module.__class__).split('.')[-1].split("'")[0]
-
-            if "Conv2d" in class_name or "Linear" in class_name:
-                if module.weight is not None:
-                    writer.add_histogram(
-                        name + '/weight/',
-                        module.weight.clone().cpu().data.numpy(),
-                        epoch + 1,
-                        bins='tensorflow')
+            writer.add_histogram(name, param.clone().cpu().data.numpy(), epoch + 1, bins='tensorflow')
 
         writer.add_scalar('loss/train_loss', train_los, epoch + 1)
         writer.add_scalar('loss/test_loss', val_los, epoch + 1)
