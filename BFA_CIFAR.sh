@@ -22,35 +22,38 @@ fi
 
 ############### Configurations ########################
 enable_tb_display=false # enable tensorboard display
-model=vanilla_resnet20
+model=resnet20_quan
 dataset=cifar10
-epochs=160
-train_batch_size=128
 test_batch_size=128
-optimizer=SGD
 
-label_info=idx_1
+label_info=eval_test
 
 attack_sample_size=128 # number of data used for BFA
-n_iter=3 # number of iteration to perform BFA
-k_top=10 # only check k_top weights with top gradient ranking in each layer
+n_iter=20 # number of iteration to perform BFA
+k_top=None # only check k_top weights with top gradient ranking in each layer
 
 
-tb_path=./save/${DATE}/${dataset}_${model}_${epochs}_${optimizer}_${label_info}/tb_log  #tensorboard log path
+save_path=./save/${DATE}/${dataset}_${model}_${label_info}
+tb_path=./save/${DATE}/${dataset}_${model}_${label_info}/tb_log  #tensorboard log path
+
+# set the pretrained model path
+pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense/BFA_defense/save/2019-11-12/cifar10_vanilla_resnet20_160_SGD_idx_1/model_best.pth.tar
 
 ############### Neural network ############################
+COUNTER=0
 {
-$PYTHON main.py --dataset ${dataset} \
-    --data_path ${data_path}   \
-    --arch ${model} --save_path ./save/${DATE}/${dataset}_${model}_${epochs}_${optimizer}_${label_info} \
-    --epochs ${epochs} --learning_rate 0.1 \
-    --optimizer ${optimizer} \
-	--schedule 80 120  --gammas 0.1 0.1 \
-    --test_batch_size ${test_batch_size} --attack_sample_size ${train_batch_size} \
-    --workers 4 --ngpu 1 --gpu_id 1 \
-    --print_freq 100 --decay 0.0003 --momentum 0.9 
-    # --reset_weight --bfa --n_iter ${n_iter} --k_top ${k_top} \
-    # --attack_sample_size ${attack_sample_size}
+while [ $COUNTER -lt 1 ]; do
+    $PYTHON main.py --dataset ${dataset} \
+        --data_path ${data_path}   \
+        --arch ${model} --save_path ${save_path}  \
+        --test_batch_size ${test_batch_size} --workers 8 --ngpu 1 --gpu_id 1 \
+        --print_freq 50 \
+        --evaluate --resume ${pretrained_model} --fine_tune\
+        --reset_weight --bfa --n_iter ${n_iter}  \
+        --attack_sample_size ${attack_sample_size} 
+        # --k_top ${k_top}
+    let COUNTER=COUNTER+1
+done
 } &
 ############## Tensorboard logging ##########################
 {

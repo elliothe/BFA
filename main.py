@@ -149,7 +149,7 @@ parser.add_argument('--n_iter',
 parser.add_argument(
     '--k_top',
     type=int,
-    default=10,
+    default=None,
     help='k weight with top ranking gradient used for bit-level gradient check.'
 )
 

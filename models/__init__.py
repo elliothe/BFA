@@ -13,3 +13,4 @@ from .vanilla_models.vanilla_mobilenet_imagenet import mobilenet_v2
 
 ############## ResNet for CIFAR-10 ###########
 from .vanilla_models.vanilla_resnet_cifar import vanilla_resnet20
+from .quan_resnet_cifar import resnet20_quan
