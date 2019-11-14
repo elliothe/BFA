@@ -19,8 +19,8 @@ class DownsampleA(nn.Module):
 class ResNetBasicblock(nn.Module):
     expansion = 1
     """
-  RexNet basicblock (https://github.com/facebook/fb.resnet.torch/blob/master/models/resnet.lua)
-  """
+    RexNet basicblock (https://github.com/facebook/fb.resnet.torch/blob/master/models/resnet.lua)
+    """
     def __init__(self, inplanes, planes, stride=1, downsample=None):
         super(ResNetBasicblock, self).__init__()
 
@@ -105,7 +105,7 @@ class CifarResNet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
-                init.kaiming_normal(m.weight)
+                init.kaiming_normal_(m.weight)
                 m.bias.data.zero_()
 
     def _make_layer(self, block, planes, blocks, stride=1):
@@ -176,3 +176,14 @@ def vanilla_resnet110(num_classes=10):
   """
     model = CifarResNet(ResNetBasicblock, 110, num_classes)
     return model
+
+
+
+#####
+# test
+
+def test_resnet20():
+    model =  vanilla_resnet20()
+    print(type(model.named_modules()))
+    # for module_idx, (name, module) in enumerate(model.named_modules()):
+    #     print(module_idx, name)

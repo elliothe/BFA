@@ -16,6 +16,8 @@ from attack.BFA import *
 import torch.nn.functional as F
 import copy
 
+import pandas as pd
+
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
                      and callable(models.__dict__[name]))
@@ -448,7 +450,7 @@ def main():
 
     if args.enable_bfa:
         perform_attack(attacker, net, net_clean, train_loader, test_loader,
-                       args.n_iter, log, writer)
+                       args.n_iter, log, writer, csv_save_path=args.save_path)
         return
 
     if args.evaluate:
@@ -530,7 +532,7 @@ def main():
 
 
 def perform_attack(attacker, model, model_clean, train_loader, test_loader,
-                   N_iter, log, writer):
+                   N_iter, log, writer, csv_save_path=None):
     # Note that, attack has to be done in evaluation model due to batch-norm.
     # see: https://discuss.pytorch.org/t/what-does-model-eval-do-for-batchnorm-layer/7146
     model.eval()
@@ -558,9 +560,13 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
     print_log('k_top is set to {}'.format(args.k_top), log)
     print_log('Attack sample size is {}'.format(data.size()[0]), log)
     end = time.time()
+    
+    df = pd.DataFrame() #init a empty dataframe for logging
+    last_val_acc_top1 = val_acc_top1
+    
     for i_iter in range(N_iter):
         print_log('**********************************', log)
-        attacker.progressive_bit_search(model, data, target)
+        attack_log = attacker.progressive_bit_search(model, data, target)
 
         # measure data loading time
         attack_time.update(time.time() - end)
@@ -592,6 +598,18 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
         # exam the BFA on entire val dataset
         val_acc_top1, val_acc_top5, val_loss = validate(
             test_loader, model, attacker.criterion, log)
+    
+        
+        # add additional info for logging
+        acc_drop = last_val_acc_top1 - val_acc_top1
+        last_val_acc_top1 = val_acc_top1
+        
+        # print(attack_log)
+        for i in range(attack_log.__len__()):
+            attack_log[i].append(val_acc_top1)
+            attack_log[i].append(acc_drop)
+        # print(attack_log)
+        df = df.append(attack_log, ignore_index=True)
 
         writer.add_scalar('attack/val_top1_acc', val_acc_top1, i_iter + 1)
         writer.add_scalar('attack/val_top5_acc', val_acc_top5, i_iter + 1)
@@ -603,6 +621,24 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
             'iteration Time {iter_time.val:.3f} ({iter_time.avg:.3f})'.format(
                 iter_time=iter_time), log)
         end = time.time()
+        
+        # break the simulation to save time
+        if args.dataset == 'cifar10':
+            break_acc = 11.0
+        elif args.dataset == 'imagenet':
+            break_acc = 0.2
+        if val_acc_top1 <= break_acc:
+            break
+        
+    # attack profile
+    column_list = ['module idx', 'bit-flip idx', 'module name', 'weight idx',
+                  'weight before attack', 'weight after attack', 'validation accuracy',
+                  'accuracy drop']
+    df.columns = column_list
+    df['trial seed'] = args.manualSeed
+    if csv_save_path is not None:
+        csv_file_name = 'attack_profile_{}.csv'.format(args.manualSeed)
+        export_csv = df.to_csv(os.path.join(csv_save_path, csv_file_name), index=None)
 
     return
 
