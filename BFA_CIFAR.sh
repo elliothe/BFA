@@ -24,11 +24,11 @@ fi
 enable_tb_display=false # enable tensorboard display
 model=resnet20_quan
 dataset=cifar10
-test_batch_size=128
+test_batch_size=100
 
-label_info=idx_4
+label_info=idx_16
 
-attack_sample_size=128 # number of data used for BFA
+attack_sample_size=1 # number of data used for BFA
 n_iter=500 # number of iteration to perform BFA
 k_top=None # only check k_top weights with top gradient ranking in each layer
 

@@ -5,6 +5,20 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from torch import nn
 
+def piecewise_clustering(var, gamma, beta):
+    var1=(var[var.ge(0)]-var[var.ge(0)].mean()).pow(2).sum()
+    var2=(var[var.le(0)]-var[var.le(0)].mean()).pow(2).sum()
+    val=gamma*var1 + beta*var2
+    return val
+
+def clustering_loss(model, lambda_coeff):
+    
+    pc_loss = 0
+    for m in model.modules():
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+            pc_loss += piecewise_clustering(m.weight, lambda_coeff, lambda_coeff)
+    
+    return pc_loss 
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""

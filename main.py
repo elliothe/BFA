@@ -7,7 +7,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-from utils import AverageMeter, RecorderMeter, time_string, convert_secs2time
+from utils import AverageMeter, RecorderMeter, time_string, convert_secs2time, clustering_loss
 from tensorboardX import SummaryWriter
 import models
 from models.quantization import quan_Conv2d, quan_Linear, quantize
@@ -17,6 +17,7 @@ import torch.nn.functional as F
 import copy
 
 import pandas as pd
+import numpy as np
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -154,6 +155,15 @@ parser.add_argument(
     default=None,
     help='k weight with top ranking gradient used for bit-level gradient check.'
 )
+# Piecewise clustering
+parser.add_argument('--clustering',
+                    dest='clustering',
+                    action='store_true',
+                    help='add the piecewise clustering term ')
+parser.add_argument('--lambda_coeff',
+                    type=float,
+                    default=1e-3,
+                    help='lambda coefficient to control the clustering term')
 
 ##########################################################################
 
@@ -454,7 +464,9 @@ def main():
         return
 
     if args.evaluate:
-        validate(test_loader, net, criterion, log)
+        _,_,_, output_summary = validate(test_loader, net, criterion, log, summary_output=True)
+        pd.DataFrame(output_summary).to_csv(os.path.join(args.save_path, 'output_summary_{}.csv'.format(args.arch)),
+                                            header=['top-1 output'], index=False)
         return
 
     # Main loop
@@ -521,6 +533,22 @@ def main():
                                  epoch + 1,
                                  bins='tensorflow')
             writer.add_histogram(name, param.clone().cpu().data.numpy(), epoch + 1, bins='tensorflow')
+            
+        total_weight_change = 0 
+            
+        for name, module in net.named_modules():
+            if isinstance(module, torch.nn.Conv2d) or isinstance(module, torch.nn.Linear):
+                try:
+                    writer.add_histogram(name+'/bin_weight', module.bin_weight.clone().cpu().data.numpy(), epoch + 1,
+                                        bins='tensorflow')
+                    writer.add_scalar(name + '/bin_weight_change', module.bin_weight_change, epoch+1)
+                    total_weight_change += module.bin_weight_change
+                    writer.add_scalar(name + '/bin_weight_change_ratio', module.bin_weight_change_ratio, epoch+1)
+                except:
+                    pass
+                
+        writer.add_scalar('total_weight_change', total_weight_change, epoch + 1)
+        print('total weight changes:', total_weight_change)
 
         writer.add_scalar('loss/train_loss', train_los, epoch + 1)
         writer.add_scalar('loss/test_loss', val_los, epoch + 1)
@@ -550,8 +578,12 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
         break
 
     # evaluate the test accuracy of clean model
-    val_acc_top1, val_acc_top5, val_loss = validate(test_loader, model,
-                                                    attacker.criterion, log)
+    val_acc_top1, val_acc_top5, val_loss, output_summary = validate(test_loader, model,
+                                                    attacker.criterion, log, summary_output=True)
+    tmp_df = pd.DataFrame(output_summary, columns=['top-1 output'])
+    tmp_df['BFA iteration'] = 0
+    tmp_df.to_csv(os.path.join(args.save_path, 'output_summary_{}_BFA_0.csv'.format(args.arch)),
+                                        index=False)
 
     writer.add_scalar('attack/val_top1_acc', val_acc_top1, 0)
     writer.add_scalar('attack/val_top5_acc', val_acc_top5, 0)
@@ -596,8 +628,12 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
         writer.add_scalar('attack/sample_loss', losses.avg, i_iter + 1)
 
         # exam the BFA on entire val dataset
-        val_acc_top1, val_acc_top5, val_loss = validate(
-            test_loader, model, attacker.criterion, log)
+        val_acc_top1, val_acc_top5, val_loss, output_summary = validate(
+            test_loader, model, attacker.criterion, log, summary_output=True)
+        tmp_df = pd.DataFrame(output_summary, columns=['top-1 output'])
+        tmp_df['BFA iteration'] = i_iter + 1
+        tmp_df.to_csv(os.path.join(args.save_path, 'output_summary_{}_BFA_{}.csv'.format(args.arch, i_iter + 1)),
+                                    index=False)
     
         
         # add additional info for logging
@@ -668,6 +704,8 @@ def train(train_loader, model, criterion, optimizer, epoch, log):
         # compute output
         output = model(input)
         loss = criterion(output, target)
+        if args.clustering:
+            loss += clustering_loss(model, args.lambda_coeff)
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(output.data, target, topk=(1, 5))
@@ -706,13 +744,14 @@ def train(train_loader, model, criterion, optimizer, epoch, log):
     return top1.avg, losses.avg
 
 
-def validate(val_loader, model, criterion, log):
+def validate(val_loader, model, criterion, log, summary_output=False):
     losses = AverageMeter()
     top1 = AverageMeter()
     top5 = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
+    output_summary = [] # init a list for output summary
 
     with torch.no_grad():
         for i, (input, target) in enumerate(val_loader):
@@ -723,6 +762,11 @@ def validate(val_loader, model, criterion, log):
             # compute output
             output = model(input)
             loss = criterion(output, target)
+            
+            # summary the output
+            if summary_output:
+                tmp_list = output.max(1, keepdim=True)[1].flatten().cpu().numpy() # get the index of the max log-probability
+                output_summary.append(tmp_list)
 
             # measure accuracy and record loss
             prec1, prec5 = accuracy(output.data, target, topk=(1, 5))
@@ -733,8 +777,12 @@ def validate(val_loader, model, criterion, log):
         print_log(
             '  **Test** Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Error@1 {error1:.3f}'
             .format(top1=top1, top5=top5, error1=100 - top1.avg), log)
-
-    return top1.avg, top5.avg, losses.avg
+        
+    if summary_output:
+        output_summary = np.asarray(output_summary).flatten()
+        return top1.avg, top5.avg, losses.avg, output_summary
+    else:
+        return top1.avg, top5.avg, losses.avg
 
 
 def print_log(print_string, log):
@@ -784,7 +832,6 @@ def accuracy(output, target, topk=(1, )):
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
         correct = pred.eq(target.view(1, -1).expand_as(pred))
-
         res = []
         for k in topk:
             correct_k = correct[:k].view(-1).float().sum(0)

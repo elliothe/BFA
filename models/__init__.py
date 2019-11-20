@@ -21,3 +21,6 @@ from .vanilla_models.vanilla_vgg_cifar import vgg11_bn, vgg11
 from .quan_vgg_cifar import vgg11_bn_quan, vgg11_quan
 
 from .test_model import vgg_test
+
+from .bin_resnet_cifar import resnet20_bin
+from .bin_vgg_cifar import vgg11_bn_bin
