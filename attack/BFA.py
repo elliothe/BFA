@@ -62,8 +62,8 @@ class BFA(object):
 
 #         print(bit2flip)
 
-# 6. Based on the identified bit indexed by ```bit2flip```, generate another
-# mask, then perform the bitwise xor operation to realize the bit-flip.
+        # 6. Based on the identified bit indexed by ```bit2flip```, generate another
+        # mask, then perform the bitwise xor operation to realize the bit-flip.
         w_bin_topk_flipped = (bit2flip.short() * m.b_w.abs().short()).sum(0, dtype=torch.int16) \
                 ^ w_bin_topk
 

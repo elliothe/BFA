@@ -22,14 +22,14 @@ fi
 
 ############### Configurations ########################
 enable_tb_display=false # enable tensorboard display
-model=vgg11_bn_bin
+model=resnet20_bin
 dataset=cifar10
 epochs=160
 train_batch_size=128
 test_batch_size=128
 optimizer=SGD
 
-label_info=idx_16
+label_info=no_idx_2
 
 attack_sample_size=128 # number of data used for BFA
 n_iter=3 # number of iteration to perform BFA

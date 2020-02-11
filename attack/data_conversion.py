@@ -7,7 +7,11 @@ def int2bin(input, num_bits):
     convert the signed integer value into unsigned integer (2's complement equivalently).
     '''
     output = input.clone()
-    output[input.lt(0)] = 2**num_bits + output[input.lt(0)]
+    if num_bits == 1: # when it is binary, the conversion is different
+        output = output/2 + .5
+    elif num_bits > 1:
+        output[input.lt(0)] = 2**num_bits + output[input.lt(0)]
+
     return output
 
 
@@ -17,8 +21,11 @@ def bin2int(input, num_bits):
     with the bitwise operations. Note that, in order to perform the bitwise operation, the input
     tensor has to be in the integer format.
     '''
-    mask = 2**(num_bits - 1) - 1
-    output = -(input & ~mask) + (input & mask)
+    if num_bits == 1:
+        output = input*2-1
+    elif num_bits > 1:
+        mask = 2**(num_bits - 1) - 1
+        output = -(input & ~mask) + (input & mask)
     return output
 
 

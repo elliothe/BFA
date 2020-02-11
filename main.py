@@ -155,11 +155,12 @@ parser.add_argument(
     default=None,
     help='k weight with top ranking gradient used for bit-level gradient check.'
 )
+
 # Piecewise clustering
 parser.add_argument('--clustering',
                     dest='clustering',
                     action='store_true',
-                    help='add the piecewise clustering term ')
+                    help='add the piecewise clustering term.')
 parser.add_argument('--lambda_coeff',
                     type=float,
                     default=1e-3,
@@ -528,11 +529,19 @@ def main():
         ## Log the graidents distribution
         for name, param in net.named_parameters():
             name = name.replace('.', '/')
-            writer.add_histogram(name + '/grad',
-                                 param.grad.clone().cpu().data.numpy(),
-                                 epoch + 1,
-                                 bins='tensorflow')
-            writer.add_histogram(name, param.clone().cpu().data.numpy(), epoch + 1, bins='tensorflow')
+            try:
+                writer.add_histogram(name + '/grad',
+                                    param.grad.clone().cpu().data.numpy(),
+                                    epoch + 1,
+                                    bins='tensorflow')
+            except:
+                pass
+            
+            try:
+                writer.add_histogram(name, param.clone().cpu().data.numpy(),
+                                      epoch + 1, bins='tensorflow')
+            except:
+                pass
             
         total_weight_change = 0 
             
