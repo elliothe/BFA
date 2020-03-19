@@ -28,7 +28,7 @@ model=vgg11_quan
 dataset=cifar10
 test_batch_size=100
 
-label_info=new_exp
+label_info=new_exp1
 
 attack_sample_size=128 # number of data used for BFA
 n_iter=1000 # number of iteration to perform BFA
