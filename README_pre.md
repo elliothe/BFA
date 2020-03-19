@@ -28,7 +28,7 @@ If you find this project useful to you, please cite [our work](http://openaccess
 }
 ```
 
-You can also access the old [repository](https://github.com/elliothe/Neural_Network_Weight_Attack) of ICCV-2019.
+You can also access the prior [repository](https://github.com/elliothe/Neural_Network_Weight_Attack) of ICCV-2019.
 
 ## Table of Contents
 
