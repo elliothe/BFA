@@ -28,6 +28,8 @@ If you find this project useful to you, please cite [our work](http://openaccess
 }
 ```
 
+You can also access the original [repository](https://github.com/elliothe/Neural_Network_Weight_Attack).
+
 ## Table of Contents
 
 - [Bit-Flips Attack and Defense:](#bit-flips-attack-and-defense)
