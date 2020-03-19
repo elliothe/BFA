@@ -22,7 +22,7 @@ If you find this project useful to you, please cite [our work](http://openaccess
 
 @inproceedings{he2020defend,
  title={Defending and Harnessing the Bit-Flip based Adversarial Weight Attack},
- author={He, Zhezhi and Rakin, Adnan Siraj and Fan, Deliang},
+ author={He, Zhezhi and Rakin, Adnan Siraj and Li, Jingtao and Chakrabarti, Chaitali and Fan, Deliang},
  booktitle={Proceedings of the IEEE International Conference on Computer Vision (CVPR)},
  year={2019}
 }
