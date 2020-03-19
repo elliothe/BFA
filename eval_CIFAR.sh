@@ -33,7 +33,7 @@ train_batch_size=128
 test_batch_size=100
 optimizer=SGD
 
-label_info=idx_5
+label_info=new_exp
 
 attack_sample_size=128 # number of data used for BFA
 n_iter=3 # number of iteration to perform BFA
@@ -55,12 +55,13 @@ $PYTHON main.py --dataset ${dataset} \
     --epochs ${epochs} --learning_rate 0.1 \
     --optimizer ${optimizer} \
 	--schedule 80 120  --gammas 0.1 0.1 \
-    --test_batch_size ${test_batch_size} --attack_sample_size ${train_batch_size} \
+    --test_batch_size ${test_batch_size} \
     --workers 4 --ngpu 1 --gpu_id 1 \
     --print_freq 100 --decay 0.0003 --momentum 0.9 \
-    --evaluate --resume ${pretrained_model} --fine_tune
-    # --reset_weight --bfa --n_iter ${n_iter} --k_top ${k_top} \
-    # --attack_sample_size ${attack_sample_size}
+    --evaluate --resume ${pretrained_model} --fine_tune \
+    --attack_sample_size ${attack_sample_size}
+    --reset_weight --bfa --n_iter ${n_iter} --k_top ${k_top} \
+    
 } &
 ############## Tensorboard logging ##########################
 {
