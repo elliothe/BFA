@@ -9,7 +9,6 @@ case $HOST in
 "alpha")
     PYTHON="/home/elliot/anaconda3/envs/pytorch041/bin/python" # python environment path
     TENSORBOARD='/home/elliot/anaconda3/envs/pytorch041/bin/tensorboard' # tensorboard environment path
-    # data_path='/home/elliot/data/imagenet' # dataset path
     data_path='/home/elliot/data/pytorch/cifar10'
     ;;
 esac
@@ -22,8 +21,6 @@ fi
 
 ############### Configurations ########################
 enable_tb_display=false # enable tensorboard display
-# model=resnet20_quan
-# model=resnet20_bin
 model=vgg11_quan
 dataset=cifar10
 test_batch_size=100
@@ -39,9 +36,7 @@ save_path=./save/${DATE}/${dataset}_${model}_${label_info}
 tb_path=./save/${DATE}/${dataset}_${model}_${label_info}/tb_log  #tensorboard log path
 
 # set the pretrained model path
-# pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense/BFA_defense/save/2019-11-12/cifar10_vanilla_resnet20_160_SGD_idx_1/model_best.pth.tar
 pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense/BFA_defense/save/2019-11-13/cifar10_vgg11_160_SGD_idx_3/model_best.pth.tar
-# pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense/BFA_defense/save/2020-02-07/cifar10_resnet20_bin_160_SGD_no_idx_2/model_best.pth.tar
 
 ############### Neural network ############################
 COUNTER=0

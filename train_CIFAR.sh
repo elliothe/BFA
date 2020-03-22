@@ -9,7 +9,6 @@ case $HOST in
 "alpha")
     PYTHON="/home/elliot/anaconda3/envs/pytorch041/bin/python" # python environment path
     TENSORBOARD='/home/elliot/anaconda3/envs/pytorch041/bin/tensorboard' # tensorboard environment path
-    # data_path='/home/elliot/data/imagenet' # dataset path
     data_path='/home/elliot/data/pytorch/cifar10'
     ;;
 esac
@@ -22,14 +21,14 @@ fi
 
 ############### Configurations ########################
 enable_tb_display=false # enable tensorboard display
-model=resnet20_bin
+model=vanilla_resnet20
 dataset=cifar10
-epochs=160
+epochs=200
 train_batch_size=128
 test_batch_size=128
 optimizer=SGD
 
-label_info=no_idx_2
+label_info=idx_1_pretrained_fp_model
 
 attack_sample_size=128 # number of data used for BFA
 n_iter=3 # number of iteration to perform BFA
@@ -45,13 +44,10 @@ $PYTHON main.py --dataset ${dataset} \
     --arch ${model} --save_path ./save/${DATE}/${dataset}_${model}_${epochs}_${optimizer}_${label_info} \
     --epochs ${epochs} --learning_rate 0.1 \
     --optimizer ${optimizer} \
-	--schedule 80 120  --gammas 0.1 0.1 \
-    --test_batch_size ${test_batch_size} --attack_sample_size ${train_batch_size} \
-    --workers 4 --ngpu 1 --gpu_id 0 \
+	--schedule 100 150  --gammas 0.1 0.1 \
+    --test_batch_size ${test_batch_size} \
+    --workers 4 --ngpu 1 --gpu_id 1 \
     --print_freq 100 --decay 0.0003 --momentum 0.9 
-    # --clustering
-    # --reset_weight --bfa --n_iter ${n_iter} --k_top ${k_top} \
-    # --attack_sample_size ${attack_sample_size}
 } &
 ############## Tensorboard logging ##########################
 {
