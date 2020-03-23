@@ -21,22 +21,23 @@ fi
 
 ############### Configurations ########################
 enable_tb_display=false # enable tensorboard display
-model=vgg11_quan
+model=resnet20_quan
 dataset=cifar10
 test_batch_size=100
 
-label_info=new_exp
+label_info=idx_4
 
 attack_sample_size=128 # number of data used for BFA
-n_iter=1000 # number of iteration to perform BFA
-k_top=None # only check k_top weights with top gradient ranking in each layer
+n_iter=100 # number of iteration to perform BFA
+k_top=100 # only check k_top weights with top gradient ranking in each layer
 
 
 save_path=./save/${DATE}/${dataset}_${model}_${label_info}
 tb_path=./save/${DATE}/${dataset}_${model}_${label_info}/tb_log  #tensorboard log path
 
 # set the pretrained model path
-pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense/BFA_defense/save/2019-11-13/cifar10_vgg11_160_SGD_idx_3/model_best.pth.tar
+# pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense_camera_ready/BFA/save/2020-03-22/cifar10_vanilla_resnet20_200_SGD_idx_1_pretrained_fp_model/model_best.pth.tar
+pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense_camera_ready/BFA/save/2020-03-23/cifar10_resnet20_quan_200_SGD_idx_3_8bit_pretrained/model_best.pth.tar
 
 ############### Neural network ############################
 COUNTER=0

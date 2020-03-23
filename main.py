@@ -667,7 +667,7 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
                 iter_time=iter_time), log)
         end = time.time()
         
-        # break the simulation to save time
+        # Stop the attack if the accuracy is below the configured break_acc.
         if args.dataset == 'cifar10':
             break_acc = 11.0
         elif args.dataset == 'imagenet':
