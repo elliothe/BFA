@@ -47,7 +47,7 @@ class quan_Conv2d(nn.Conv2d):
                                           dilation=dilation,
                                           groups=groups,
                                           bias=bias)
-        self.N_bits = 8
+        self.N_bits = 4
         self.full_lvls = 2**self.N_bits
         self.half_lvls = (self.full_lvls - 2) / 2
         # Initialize the step size
@@ -98,7 +98,7 @@ class quan_Linear(nn.Linear):
     def __init__(self, in_features, out_features, bias=True):
         super(quan_Linear, self).__init__(in_features, out_features, bias=bias)
 
-        self.N_bits = 8
+        self.N_bits = 4
         self.full_lvls = 2**self.N_bits
         self.half_lvls = (self.full_lvls - 2) / 2
         # Initialize the step size
@@ -144,18 +144,16 @@ class quan_Linear(nn.Linear):
 
 
 
-
 # class _bin_func(torch.autograd.Function):
 
 #     @staticmethod
 #     def forward(ctx, input, mu):
         
 #         ctx.mu = mu 
-#         output = input.clone().zero_()
-#         output[input.ge(0)] = 1
-#         output[input.lt(0)] = -1
-
-#         return output
+#         # output = input.clone().zero_()
+#         # output[input.ge(0)] = 1
+#         # output[input.lt(0)] = -1
+#         return torch.sign(input)
 
 #     @staticmethod
 #     def backward(ctx, grad_output):
@@ -196,7 +194,7 @@ class quan_Linear(nn.Linear):
 #                                                 step=-1).unsqueeze(-1).float(),
 #                                 requires_grad=False)
 
-#         self.b_w[0] = -self.b_w[0]  #in-place change MSB to negative
+#         # self.b_w[0] = -self.b_w[0]  #in-place change MSB to negative
 
 
 #     def forward(self, input):
@@ -217,8 +215,8 @@ class quan_Linear(nn.Linear):
 #                             self.groups)
 #         else:
 #             self.__reset_stepsize__()
-#             self.bin_weight = quantize(self.weight, self.step_size) * self.step_size      
-#             return F.conv2d(input, self.bin_weight, self.bias, self.stride,
+#             bin_weight = quantize(self.weight, self.step_size) * self.step_size      
+#             return F.conv2d(input, bin_weight, self.bias, self.stride,
 #                             self.padding, self.dilation, self.groups)
 
 #     def __reset_stepsize__(self):
@@ -253,7 +251,7 @@ class quan_Linear(nn.Linear):
 #                                                 step=-1).unsqueeze(-1).float(),
 #                                 requires_grad=False)
 
-#         self.b_w[0] = -self.b_w[0]  #in-place change MSB to negative
+#         # self.b_w[0] = -self.b_w[0]  #in-place change MSB to negative
 
 
 #     def forward(self, input):
@@ -272,8 +270,8 @@ class quan_Linear(nn.Linear):
 #             return F.linear(input, self.weight * self.step_size, self.bias)
 #         else:
 #             self.__reset_stepsize__()
-#             self.bin_weight = quantize(self.weight, self.step_size) * self.step_size      
-#             return F.linear(input, self.bin_weight * self.step_size, self.bias)
+#             bin_weight = quantize(self.weight, self.step_size) * self.step_size      
+#             return F.linear(input, bin_weight, self.bias)
         
 #     def __reset_stepsize__(self):
 #         with torch.no_grad():

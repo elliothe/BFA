@@ -34,6 +34,7 @@ def weight_conversion(model):
     '''
     Perform the weight data type conversion between:
         signed integer <==> two's complement (unsigned integer)
+    Such conversion is used as additional step to ensure the conversion correctness
 
     Note that, the data type conversion chosen is depend on the bits:
         N_bits <= 8   .char()   --> torch.CharTensor(), 8-bit signed integer

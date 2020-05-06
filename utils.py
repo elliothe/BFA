@@ -4,21 +4,34 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from torch import nn
+import torch
+from models.quantization import quan_Conv2d, quan_Linear
 
-def piecewise_clustering(var, gamma, beta):
-    var1=(var[var.ge(0)]-var[var.ge(0)].mean()).pow(2).sum()
-    var2=(var[var.le(0)]-var[var.le(0)].mean()).pow(2).sum()
-    val=gamma*var1 + beta*var2
-    return val
+def piecewise_clustering(var, lambda_coeff, l_norm):
+    var1=(var[var.ge(0)]-var[var.ge(0)].mean()).pow(l_norm).sum()
+    var2=(var[var.le(0)]-var[var.le(0)].mean()).pow(l_norm).sum()
+    return lambda_coeff*(var1+var2)
 
-def clustering_loss(model, lambda_coeff):
+def clustering_loss(model, lambda_coeff, l_norm=2):
     
     pc_loss = 0
     for m in model.modules():
         if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-            pc_loss += piecewise_clustering(m.weight, lambda_coeff, lambda_coeff)
+            pc_loss += piecewise_clustering(m.weight, lambda_coeff, l_norm)
     
     return pc_loss 
+
+def change_quan_bitwidth(model, n_bit):
+    '''This script change the quantization bit-width of entire model to n_bit'''
+    for m in model.modules():
+        if isinstance(m, quan_Conv2d) or isinstance(m, quan_Linear):
+            m.N_bits = n_bit
+            # print("Change weight bit-width as {}.".format(m.N_bits))
+            m.b_w.data = m.b_w.data[-m.N_bits:]
+            m.b_w[0] = -m.b_w[0]
+            print(m.b_w)
+    return 
+            
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""

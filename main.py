@@ -7,7 +7,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-from utils import AverageMeter, RecorderMeter, time_string, convert_secs2time, clustering_loss
+from utils import AverageMeter, RecorderMeter, time_string, convert_secs2time, clustering_loss, change_quan_bitwidth
 from tensorboardX import SummaryWriter
 import models
 from models.quantization import quan_Conv2d, quan_Linear, quantize
@@ -127,16 +127,16 @@ parser.add_argument('--workers',
 parser.add_argument('--manualSeed', type=int, default=None, help='manual seed')
 # quantization
 parser.add_argument(
+    '--quan_bitwidth',
+    type=int,
+    default=None,
+    help='the bitwidth used for quantization')
+parser.add_argument(
     '--reset_weight',
     dest='reset_weight',
     action='store_true',
     help='enable the weight replacement with the quantized weight')
-parser.add_argument(
-    '--optimize_step',
-    dest='optimize_step',
-    action='store_true',
-    help='enable the step size optimization for weight quantization')
-# Bit Flip Attacked
+# Bit Flip Attack
 parser.add_argument('--bfa',
                     dest='enable_bfa',
                     action='store_true',
@@ -352,7 +352,7 @@ def main():
     ]
 
     step_param = [
-        param for name, param in net.named_parameters() if 'step_size' in name
+        param for name, param in net.named_parameters() if 'step_size' in name 
     ]
 
     if args.optimizer == "SGD":
@@ -366,7 +366,7 @@ def main():
     elif args.optimizer == "Adam":
         print("using Adam as optimizer")
         optimizer = torch.optim.Adam(filter(lambda param: param.requires_grad,
-                                            net.parameters()),
+                                            all_param),
                                      lr=state['learning_rate'],
                                      weight_decay=state['decay'])
 
@@ -413,40 +413,16 @@ def main():
     else:
         print_log(
             "=> do not use any checkpoint for {} model".format(args.arch), log)
+        
+    # Configure the quantization bit-width
+    if args.quan_bitwidth is not None:
+        change_quan_bitwidth(net, args.quan_bitwidth)
 
     # update the step_size once the model is loaded. This is used for quantization.
     for m in net.modules():
         if isinstance(m, quan_Conv2d) or isinstance(m, quan_Linear):
             # simple step size update based on the pretrained model or weight init
             m.__reset_stepsize__()
-
-    # block for quantizer optimization
-    if args.optimize_step:
-        optimizer_quan = torch.optim.SGD(step_param,
-                                         lr=0.01,
-                                         momentum=0.9,
-                                         weight_decay=0,
-                                         nesterov=True)
-
-        for m in net.modules():
-            if isinstance(m, quan_Conv2d) or isinstance(m, quan_Linear):
-                for i in range(
-                        300
-                ):  # runs 200 iterations to reduce quantization error
-                    optimizer_quan.zero_grad()
-                    weight_quan = quantize(m.weight, m.step_size,
-                                           m.half_lvls) * m.step_size
-                    loss_quan = F.mse_loss(weight_quan,
-                                           m.weight,
-                                           reduction='mean')
-                    loss_quan.backward()
-                    optimizer_quan.step()
-
-        for m in net.modules():
-            if isinstance(m, quan_Conv2d):
-                print(m.step_size.data.item(),
-                      (m.step_size.detach() * m.half_lvls).item(),
-                      m.weight.max().item())
 
     # block for weight reset
     if args.reset_weight:
