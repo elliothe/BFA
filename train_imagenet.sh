@@ -4,7 +4,7 @@
 HOST=$(hostname)
 echo "Current host is: $HOST"
 
-# Automatic check the host and configure
+# Automatic check the host and configuration
 case $HOST in
 "alpha")
     PYTHON="/home/elliot/anaconda3/envs/pytorch041/bin/python" # python environment path
