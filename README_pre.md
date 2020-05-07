@@ -37,9 +37,9 @@ If you find this project useful to you, please cite [our work](http://openaccess
   - [Usage](#usage)
     - [1. Configurations](#1-configurations)
     - [2. Perform the BFA](#2-perform-the-bfa)
-      - [2.1 Attack on the model trained in floating-point model.](#21-attack-on-the-model-trained-in-floating-point-model)
+      - [2.1 Attack on the model trained in floating-point.](#21-attack-on-the-model-trained-in-floating-point)
         - [Example of ResNet-18 on ImageNet](#example-of-resnet-18-on-imagenet)
-        - [Additional configurations (Q\&A)](#additional-configurations-qa)
+        - [What if I want to attack another Network architecture?](#what-if-i-want-to-attack-another-network-architecture)
   - [Misc](#misc)
     - [Model quantization](#model-quantization)
     - [Bit Flipping](#bit-flipping)
@@ -82,7 +82,7 @@ esac
 
 ### 2. Perform the BFA
 
-#### 2.1 Attack on the model trained in floating-point model.
+#### 2.1 Attack on the model trained in floating-point.
 
 ##### Example of ResNet-18 on ImageNet
 
@@ -128,11 +128,9 @@ iteration Time 62.318 (62.142)
 ```
 It shows to identify one bit througout the entire model only takes ~2 Second (i.e., Attack Time) using 128 sample images for BFA. 
 
-##### Additional configurations (Q\&A)
+#####  What if I want to attack another Network architecture?
 
-**Q1**: What if I want to attack another Network architecture?
-
-**A1**: Taken the MobileNet v2 as example:
+Taken the MobileNet v2 as example, the step-by-step tutorial is listed as follow:
 1.  the first step is find a [pretrained pytorch model online](https://github.com/pytorch/vision/blob/master/torchvision/models/mobilenet.py).
 2.  create the model definition as ```./models/vanilla_models/vanilla_mobilenet_imagenet.py```, and copy the [model](https://github.com/pytorch/vision/blob/master/torchvision/models/mobilenet.py) into it. Then add the following line to the ```.models/__init__.py```:
 
