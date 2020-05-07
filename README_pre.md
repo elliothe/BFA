@@ -151,13 +151,56 @@ def mobilenet_v2(pretrained=True, progress=True, **kwargs):
 **Test** Prec@1 71.878 Prec@5 90.286 Error@1 28.122
 ```
 
-4. To check the accuracy with 8-bit weight quantization. create a copy of quantized mobilenetv2 in `models/quan_mobilenet_imagenet.py`. The following modifications are made:
+4. To check the accuracy with 8-bit weight quantization. create a copy of quantized mobilenetv2 in `models/quan_mobilenet_imagenet.py`. The following modifications are made sequentially:
   - import the quantized convolution and fully-connected layer.
   ```python
   from .quantization import *
   ```
-  - change all `nn.Conv2d` and `nn.Linear` to `quan_Conv2d` and `quan_Linear`. 
-  - To evaluate the accuracy of quantized version. 
+  - Change all `nn.Conv2d` and `nn.Linear` to `quan_Conv2d` and `quan_Linear`.
+  - Add codes for proper model loading:
+  ```python
+        # Modification for proper model loading
+        model_dict = model.state_dict()
+        pretrained_dict = {
+            k: v
+            for k, v in pretrained_dict.items() if k in model_dict
+        }
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+  ```
+  - Initialize the model in ```.models/__init__.py```:
+  ```python
+  from .quan_mobilenet_imagenet import mobilenet_v2_quan
+  ```
+  - To evaluate the accuracy of quantized version, run ```bash eval_imagenet_quan.sh```, then you get:
+```txt
+**Test** Prec@1 71.138 Prec@5 90.012 Error@1 28.862
+```
+5. To perform the BFA on mobilenet-v2, simply change the configuration in `BFA_imagenet.sh`:
+```bash
+model=mobilenet_v2_quan 
+attack_sample_size=10 # reduce the data sampes to 10, otherwise GPU out-of-memory
+```
+The BFA result is:
+```txt
+  **Test** Prec@1 71.138 Prec@5 90.012 Error@1 28.862
+k_top is set to 10
+Attack sample size is 10
+**********************************
+attacked module: features.1.conv.0.0
+attacked weight index: [6 0 1 2]
+weight before attack: -41.0
+weight after attack: 87.0
+Iteration: [001/020]   Attack Time 1.004 (1.004)  [2020-05-07 04:26:19]
+loss before attack: 1.1194
+loss after attack: 13.1416
+bit flips: 1
+hamming_dist: 1
+  **Test** Prec@1 0.238 Prec@5 0.866 Error@1 99.762
+iteration Time 64.102 (64.102)
+**********************************
+```
+Single bit-flip on 8-bit Mobilenet-V2 degrade the top-1 accuracy from 71.138% to 0.206%.
 
 
 ## Misc

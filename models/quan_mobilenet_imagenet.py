@@ -165,7 +165,7 @@ class MobileNetV2(nn.Module):
         return self._forward_impl(x)
 
 
-def mobilenet_v2(pretrained=True, progress=True, **kwargs):
+def mobilenet_v2_quan(pretrained=True, progress=True, **kwargs):
     """
     Constructs a MobileNetV2 architecture from
     `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
@@ -176,7 +176,16 @@ def mobilenet_v2(pretrained=True, progress=True, **kwargs):
     """
     model = MobileNetV2(**kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
+        pretrained_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
                                               progress=progress)
-        model.load_state_dict(state_dict)
+
+        # Modification for proper model loading
+        model_dict = model.state_dict()
+        pretrained_dict = {
+            k: v
+            for k, v in pretrained_dict.items() if k in model_dict
+        }
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+
     return model
