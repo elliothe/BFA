@@ -21,20 +21,17 @@ fi
 
 ############### Configurations ########################
 enable_tb_display=false # enable tensorboard display
-# model=vanilla_resnet20
-model=resnet20_quan
+model=vgg11_bn_quan
+# model=resnet20_quan
 dataset=cifar10
 epochs=200
 train_batch_size=128
 test_batch_size=128
 optimizer=SGD
 
-label_info=idx_2_8bit_pretrained
+label_info=idx_34
 
 attack_sample_size=128 # number of data used for BFA
-n_iter=3 # number of iteration to perform BFA
-k_top=10 # only check k_top weights with top gradient ranking in each layer
-
 
 tb_path=./save/${DATE}/${dataset}_${model}_${epochs}_${optimizer}_${label_info}/tb_log  #tensorboard log path
 
@@ -48,7 +45,9 @@ $PYTHON main.py --dataset ${dataset} \
 	--schedule 100 150  --gammas 0.1 0.1 \
     --test_batch_size ${test_batch_size} \
     --workers 4 --ngpu 1 --gpu_id 1 \
-    --print_freq 100 --decay 0.0003 --momentum 0.9 
+    --print_freq 100 --decay 0.0003 --momentum 0.9 \
+    --clustering --lambda_coeff 1e-3    
+    # --quan_bitwidth 2
 } &
 ############## Tensorboard logging ##########################
 {

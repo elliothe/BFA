@@ -1,6 +1,6 @@
+> This repository is modified from prior [repository](https://github.com/elliothe/Neural_Network_Weight_Attack) of ICCV-2019, which includes defense codes and other codes for profiling purpose. For
 
-# Bit-Flips Attack and Defense:
-
+# Bit-Flips Attack and Defense
 
 ![BFA](assets/BFA.jpg?raw=true "Bit Flip Attack")
 
@@ -28,15 +28,19 @@ If you find this project useful to you, please cite [our work](http://openaccess
 }
 ```
 
-You can also access the prior [repository](https://github.com/elliothe/Neural_Network_Weight_Attack) of ICCV-2019.
-
 ## Table of Contents
 
-- [Bit-Flips Attack and Defense:](#bit-flips-attack-and-defense)
+- [Bit-Flips Attack and Defense](#bit-flips-attack-and-defense)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
-  - [Dependencies:](#dependencies)
+  - [Dependencies](#dependencies)
   - [Usage](#usage)
+    - [1. Configurations](#1-configurations)
+    - [2. Perform the BFA](#2-perform-the-bfa)
+      - [2.1 Attack on the model trained in floating-point model.](#21-attack-on-the-model-trained-in-floating-point-model)
+        - [Example of ResNet-18 on ImageNet](#example-of-resnet-18-on-imagenet)
+        - [Additional configurations (Q\&A)](#additional-configurations-qa)
+  - [Misc](#misc)
     - [Model quantization](#model-quantization)
     - [Bit Flipping](#bit-flipping)
   - [License](#license)
@@ -45,7 +49,7 @@ You can also access the prior [repository](https://github.com/elliothe/Neural_Ne
 
 This repository includes a Bit-Flip Attack (BFA) algorithm which search and identify the vulernable bits within a quantized deep neural network.
 
-## Dependencies:
+## Dependencies
   
 * Python 3.6 (Anaconda)
 * [Pytorch](https://pytorch.org/) >=1.01
@@ -58,55 +62,148 @@ For more specific dependency, please refer [environment.yml](./environment.yml) 
 1. Get a quantized model.
 2. Conduct BFA bit-by-bit. -->
 
-Please modify `PYTHON=`, `TENSORBOARD=` and `data_path=` in the example bash code (`BFA_imagenet.sh`) before running the code.
+### 1. Configurations
+
+Please modify `"alhpha"`, `PYTHON=`, `TENSORBOARD=` and `data_path=` in the example bash code (`BFA_imagenet.sh`) before running the code. This configuration is extremely useful to run the same code on different nodes.
 
 ```bash
 HOST=$(hostname)
 echo "Current host is: $HOST"
 
-# Automatic check the host and configure
+# Automatic check the host and configuration
 case $HOST in
-"alpha")
-    # PYTHON="/home/elliot/anaconda3/envs/pytorch_041/bin/python" # python environment
-    PYTHON="/home/elliot/anaconda3/envs/bindsnet/bin/python"
-    TENSORBOARD='/home/elliot/anaconda3/envs/bindsnet/bin/tensorboard'
-    data_path='/home/elliot/data/imagenet'
+"alpha") # alpha is the hostname (check your current host in terminal by 'hostname')
+    PYTHON="/home/elliot/anaconda3/envs/pytorch041/bin/python" # python environment path
+    TENSORBOARD='/home/elliot/anaconda3/envs/pytorch041/bin/tensorboard' # tensorboard environment path
+    data_path='/home/elliot/data/imagenet' # imagenet/cifar10 dataset path
     ;;
 esac
 ```
 
-Then just run the following command in the terminal.
+### 2. Perform the BFA
+
+#### 2.1 Attack on the model trained in floating-point model.
+
+##### Example of ResNet-18 on ImageNet
+
+> __Note__: BFA evalution can only be performed on signle GPU (i.e., data_parallel lead to bug). 
+> __Note__: Keep the bit-width of weight quantization as 8-bit.
+
+Here I show the BFA on the ResNet-18, where the ResNet-18 is from [pytorch pretrained model Zoo](https://pytorch.org/docs/stable/torchvision/models.html). BFA can be performed by just running the following command in the terminal. 
 ```bash
-bash BFA_imagenet.sh
+$ bash BFA_imagenet.sh
 # CUDA_VISIBLE_DEVICES=2 bash BFA_imagenet.sh  # to specify GPU id to ex. 2
 ```
 
-The example log file of BFA on ResNet34:
+The example output log file of BFA on ResNet18:
 ```txt
-  **Test** Prec@1 73.126 Prec@5 91.380 Error@1 26.874
+  **Test** Prec@1 69.498 Prec@5 88.976 Error@1 30.502
 k_top is set to 10
 Attack sample size is 128
 **********************************
-Iteration: [001/020]   Attack Time 3.241 (3.241)  [2019-08-28 07:59:27]
-loss before attack: 0.4138
-loss after attack: 0.5209
+attacked module: conv1
+attacked weight index: [42  2  4  5]
+weight before attack: 21.0
+weight after attack: -107.0
+Iteration: [001/020]   Attack Time 1.824 (1.824)  [2020-05-06 21:14:43]
+loss before attack: 0.6131
+loss after attack: 0.8230
 bit flips: 1
 hamming_dist: 1
-  **Test** Prec@1 72.512 Prec@5 91.072 Error@1 27.488
-iteration Time 65.493 (65.493)
+  **Test** Prec@1 67.538 Prec@5 87.756 Error@1 32.462
+iteration Time 61.966 (61.966)
 **********************************
-Iteration: [002/020]   Attack Time 2.667 (2.954)  [2019-08-28 08:00:35]
-loss before attack: 0.5209
-loss after attack: 0.7529
+attacked module: layer2.0.downsample.0
+attacked weight index: [33 50  0  0]
+weight before attack: -1.0
+weight after attack: 127.0
+Iteration: [002/020]   Attack Time 1.315 (1.569)  [2020-05-06 21:15:47]
+loss before attack: 0.8230
+loss after attack: 1.4941
 bit flips: 2
 hamming_dist: 2
-  **Test** Prec@1 70.492 Prec@5 89.866 Error@1 29.508
-iteration Time 65.671 (65.582)
+  **Test** Prec@1 59.754 Prec@5 82.390 Error@1 40.246
+iteration Time 62.318 (62.142)
 **********************************
 ```
-It shows to identify one bit througout the entire model only takes ~3 Second (i.e., Attack Time) using 128 sample images for BFA. 
+It shows to identify one bit througout the entire model only takes ~2 Second (i.e., Attack Time) using 128 sample images for BFA. 
+
+##### Additional configurations (Q\&A)
+
+**Q1**: What if I want to attack another Network architecture?
+
+**A1**: Taken the MobileNet v2 as example:
+1.  the first step is find a [pretrained pytorch model online](https://github.com/pytorch/vision/blob/master/torchvision/models/mobilenet.py).
+2.  create the model definition as ```./models/vanilla_models/vanilla_mobilenet_imagenet.py```, and copy the [model](https://github.com/pytorch/vision/blob/master/torchvision/models/mobilenet.py) into it. Then add the following line to the ```.models/__init__.py```:
+
+```python
+############# Mobilenet for ImageNet #######
+from .vanilla_models.vanilla_mobilenet_imagenet import mobilenet_v2
+```
+And make sure you are using the pretrained model option is enabled by setting `pretrained=True` in ```./models/vanilla_models/vanilla_mobilenet_imagenet.py```:
+```python
+def mobilenet_v2(pretrained=True, progress=True, **kwargs):
+  ...
+```
+
+3. Run the `bash eval_imagenet.sh` can see that accuracy on validation dataset is 71.878\%.
+```txt
+**Test** Prec@1 71.878 Prec@5 90.286 Error@1 28.122
+```
+
+4. To check the accuracy with 8-bit weight quantization. create a copy of quantized mobilenetv2 in `models/quan_mobilenet_imagenet.py`. The following modifications are made sequentially:
+  - import the quantized convolution and fully-connected layer.
+  ```python
+  from .quantization import *
+  ```
+  - Change all `nn.Conv2d` and `nn.Linear` to `quan_Conv2d` and `quan_Linear`.
+  - Add codes for proper model loading:
+  ```python
+        # Modification for proper model loading
+        model_dict = model.state_dict()
+        pretrained_dict = {
+            k: v
+            for k, v in pretrained_dict.items() if k in model_dict
+        }
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+  ```
+  - Initialize the model in ```.models/__init__.py```:
+  ```python
+  from .quan_mobilenet_imagenet import mobilenet_v2_quan
+  ```
+  - To evaluate the accuracy of quantized version, run ```bash eval_imagenet_quan.sh```, then you get:
+```txt
+**Test** Prec@1 71.138 Prec@5 90.012 Error@1 28.862
+```
+5. To perform the BFA on mobilenet-v2, simply change the configuration in `BFA_imagenet.sh`:
+```bash
+model=mobilenet_v2_quan 
+attack_sample_size=10 # reduce the data sampes to 10, otherwise GPU out-of-memory
+```
+The BFA result is:
+```txt
+  **Test** Prec@1 71.138 Prec@5 90.012 Error@1 28.862
+k_top is set to 10
+Attack sample size is 10
+**********************************
+attacked module: features.1.conv.0.0
+attacked weight index: [6 0 1 2]
+weight before attack: -41.0
+weight after attack: 87.0
+Iteration: [001/020]   Attack Time 1.004 (1.004)  [2020-05-07 04:26:19]
+loss before attack: 1.1194
+loss after attack: 13.1416
+bit flips: 1
+hamming_dist: 1
+  **Test** Prec@1 0.238 Prec@5 0.866 Error@1 99.762
+iteration Time 64.102 (64.102)
+**********************************
+```
+Single bit-flip on 8-bit Mobilenet-V2 degrade the top-1 accuracy from 71.138% to 0.206%.
 
 
+## Misc
 ### Model quantization
 
 We direct adopt the post-training quantization on the DNN pretrained model provided by the [model-zoo](https://pytorch.org/docs/stable/torchvision/models.html) of pytorch. 

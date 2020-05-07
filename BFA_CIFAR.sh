@@ -23,11 +23,11 @@ fi
 enable_tb_display=false # enable tensorboard display
 model=resnet20_quan
 dataset=cifar10
-test_batch_size=100
+test_batch_size=128
 
-label_info=idx_4
+label_info=BFA_test
 
-attack_sample_size=128 # number of data used for BFA
+attack_sample_size=256 # number of data used for BFA
 n_iter=100 # number of iteration to perform BFA
 k_top=100 # only check k_top weights with top gradient ranking in each layer
 
@@ -37,7 +37,7 @@ tb_path=./save/${DATE}/${dataset}_${model}_${label_info}/tb_log  #tensorboard lo
 
 # set the pretrained model path
 # pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense_camera_ready/BFA/save/2020-03-22/cifar10_vanilla_resnet20_200_SGD_idx_1_pretrained_fp_model/model_best.pth.tar
-pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense_camera_ready/BFA/save/2020-03-23/cifar10_resnet20_quan_200_SGD_idx_3_8bit_pretrained/model_best.pth.tar
+pretrained_model=/home/elliot/Documents/CVPR_2020/BFA_defense_camera_ready/BFA/save/2020-03-29/cifar10_resnet20_quan_200_SGD_idx_15/model_best.pth.tar
 
 ############### Neural network ############################
 COUNTER=0
@@ -51,6 +51,7 @@ while [ $COUNTER -lt 1 ]; do
         --evaluate --resume ${pretrained_model} --fine_tune\
         --reset_weight --bfa --n_iter ${n_iter} \
         --attack_sample_size ${attack_sample_size} \
+        # --quan_bitwidth 4
         # --k_top ${k_top} \
 
     let COUNTER=COUNTER+1

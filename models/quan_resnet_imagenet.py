@@ -187,7 +187,7 @@ class ResNet(nn.Module):
 def resnet18_quan(pretrained=True, **kwargs):
     """Constructs a ResNet-18 model.
 
-    Args:
+    Args:  
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
