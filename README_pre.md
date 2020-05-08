@@ -37,9 +37,13 @@ If you find this project useful to you, please cite [our work](http://openaccess
   - [Usage](#usage)
     - [1. Configurations](#1-configurations)
     - [2. Perform the BFA](#2-perform-the-bfa)
-      - [2.1 Attack on the model trained in floating-point model.](#21-attack-on-the-model-trained-in-floating-point-model)
+      - [2.1 Attack on the model trained in floating-point.](#21-attack-on-the-model-trained-in-floating-point)
         - [Example of ResNet-18 on ImageNet](#example-of-resnet-18-on-imagenet)
-        - [Additional configurations (Q\&A)](#additional-configurations-qa)
+        - [What if I want to attack another Network architecture?](#what-if-i-want-to-attack-another-network-architecture)
+        - [How to perform random bit-flips on a given model?](#how-to-perform-random-bit-flips-on-a-given-model)
+      - [2.2 Training-based BFA defense](#22-training-based-bfa-defense)
+        - [Binarization-aware training](#binarization-aware-training)
+        - [Piecewise Weight Clustering](#piecewise-weight-clustering)
   - [Misc](#misc)
     - [Model quantization](#model-quantization)
     - [Bit Flipping](#bit-flipping)
@@ -82,7 +86,7 @@ esac
 
 ### 2. Perform the BFA
 
-#### 2.1 Attack on the model trained in floating-point model.
+#### 2.1 Attack on the model trained in floating-point.
 
 ##### Example of ResNet-18 on ImageNet
 
@@ -128,11 +132,9 @@ iteration Time 62.318 (62.142)
 ```
 It shows to identify one bit througout the entire model only takes ~2 Second (i.e., Attack Time) using 128 sample images for BFA. 
 
-##### Additional configurations (Q\&A)
+#####  What if I want to attack another Network architecture?
 
-**Q1**: What if I want to attack another Network architecture?
-
-**A1**: Taken the MobileNet v2 as example:
+Taken the MobileNet v2 as example, the step-by-step tutorial is listed as follow:
 1.  the first step is find a [pretrained pytorch model online](https://github.com/pytorch/vision/blob/master/torchvision/models/mobilenet.py).
 2.  create the model definition as ```./models/vanilla_models/vanilla_mobilenet_imagenet.py```, and copy the [model](https://github.com/pytorch/vision/blob/master/torchvision/models/mobilenet.py) into it. Then add the following line to the ```.models/__init__.py```:
 
@@ -201,6 +203,48 @@ iteration Time 64.102 (64.102)
 **********************************
 ```
 Single bit-flip on 8-bit Mobilenet-V2 degrade the top-1 accuracy from 71.138% to 0.206%.
+
+
+##### How to perform random bit-flips on a given model?
+
+The random attack is performed on all the possible weight bit (regardless MSB to LSB). Take the above MobileNet-v2 as example, you just need to add another line to enable the random bit flip `--random_bfa` in `BFA_imagent.sh`:
+```bash
+    ...
+    --attack_sample_size ${attack_sample_size} \
+    --random_bfa
+    ...
+```
+
+#### 2.2 Training-based BFA defense
+
+##### Binarization-aware training
+
+Taken the ResNet-20 on CIFAR-10 as example:
+
+1. Define a binarized ResNet20 in `models/quan_resnet_cifar.py`.
+2. To use the weight binariztaion function. Comment out [multi-bit quantization](https://github.com/elliothe/BFA/blob/8a540ac0900f2599778394cfd1df56c0965c7cdf/models/quantization.py#L8-L142) and uncomment the [binarization modules](https://github.com/elliothe/BFA/blob/8a540ac0900f2599778394cfd1df56c0965c7cdf/models/quantization.py#L147-L290).
+   
+3. Perform the model training, where the binarized model is initialized in `models/__init__.py` as `resnet20_quan`. Then run `bash train_CIFAR.sh`  in terminal (Don't forget the path configuration!).
+
+4. With binarized model trained and stored at `<path-to-model>/model_best.pth.tar`, make sure the following changes in the `BFA_CIFAR.sh`:
+```bash
+pretrained_model='<path-to-model>/model_best.pth.tar'
+```
+
+##### Piecewise Weight Clustering
+
+> The piecewise weight clutering should not be applied on the binarized NN. 
+
+1. Make sure ```models/quantization.py``` use the multi-bit quantization, in constrast to the binarized counterpart. To change the bit-width, please access the code in ```models/quantization.py```. Under the definition of ```quan_Conv2d``` and ```quan_Linear```, change the arg ```self.N_bits = 8``` if you want 8-bit quantization.
+
+2. In `train_CIFAR.sh`, enable (i.e., uncomment) the following command:
+```bash
+--clustering --lambda_coeff 1e-3
+```
+Then train the model by `bash train_CIFAR.sh`.
+
+3. For the BFA evaluation, please refer the binarization case.
+
 
 
 ## Misc
