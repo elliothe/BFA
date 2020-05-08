@@ -40,6 +40,7 @@ If you find this project useful to you, please cite [our work](http://openaccess
       - [2.1 Attack on the model trained in floating-point.](#21-attack-on-the-model-trained-in-floating-point)
         - [Example of ResNet-18 on ImageNet](#example-of-resnet-18-on-imagenet)
         - [What if I want to attack another Network architecture?](#what-if-i-want-to-attack-another-network-architecture)
+        - [How to perform random bit-flips on a given model?](#how-to-perform-random-bit-flips-on-a-given-model)
   - [Misc](#misc)
     - [Model quantization](#model-quantization)
     - [Bit Flipping](#bit-flipping)
@@ -199,6 +200,17 @@ iteration Time 64.102 (64.102)
 **********************************
 ```
 Single bit-flip on 8-bit Mobilenet-V2 degrade the top-1 accuracy from 71.138% to 0.206%.
+
+
+##### How to perform random bit-flips on a given model?
+
+The random attack is performed on all the possible weight bit (regardless MSB to LSB). Take the above MobileNet-v2 as example, you just need to add another line to enable the random bit flip `--random_bfa` in `BFA_imagent.sh`:
+```bash
+    ...
+    --attack_sample_size ${attack_sample_size} \
+    --random_bfa
+    ...
+```
 
 
 ## Misc

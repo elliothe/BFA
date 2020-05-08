@@ -155,6 +155,10 @@ parser.add_argument(
     default=None,
     help='k weight with top ranking gradient used for bit-level gradient check.'
 )
+parser.add_argument('--random_bfa',
+                    dest='random_bfa',
+                    action='store_true',
+                    help='perform the bit-flips randomly on weight bits')
 
 # Piecewise clustering
 parser.add_argument('--clustering',
@@ -431,13 +435,14 @@ def main():
                 m.__reset_weight__()
                 # print(m.weight)
 
-    attacker = BFA(criterion, args.k_top)
+    attacker = BFA(criterion, net, args.k_top)
     net_clean = copy.deepcopy(net)
     # weight_conversion(net)
 
     if args.enable_bfa:
         perform_attack(attacker, net, net_clean, train_loader, test_loader,
-                       args.n_iter, log, writer, csv_save_path=args.save_path)
+                       args.n_iter, log, writer, csv_save_path=args.save_path,
+                       random_attack=args.random_bfa)
         return
 
     if args.evaluate:
@@ -545,7 +550,7 @@ def main():
 
 
 def perform_attack(attacker, model, model_clean, train_loader, test_loader,
-                   N_iter, log, writer, csv_save_path=None):
+                   N_iter, log, writer, csv_save_path=None, random_attack=False):
     # Note that, attack has to be done in evaluation model due to batch-norm.
     # see: https://discuss.pytorch.org/t/what-does-model-eval-do-for-batchnorm-layer/7146
     model.eval()
@@ -583,8 +588,12 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
     
     for i_iter in range(N_iter):
         print_log('**********************************', log)
-        attack_log = attacker.progressive_bit_search(model, data, target)
-
+        if not random_attack:
+            attack_log = attacker.progressive_bit_search(model, data, target)
+        else:
+            attack_log = attacker.random_flip_one_bit(model)
+            
+        
         # measure data loading time
         attack_time.update(time.time() - end)
         end = time.time()
@@ -592,7 +601,8 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
         h_dist = hamming_distance(model, model_clean)
 
         # record the loss
-        losses.update(attacker.loss_max, data.size(0))
+        if hasattr(attacker, "loss_max"):
+            losses.update(attacker.loss_max, data.size(0))
 
         print_log(
             'Iteration: [{:03d}/{:03d}]   '
@@ -601,10 +611,13 @@ def perform_attack(attacker, model, model_clean, train_loader, test_loader,
                    N_iter,
                    attack_time=attack_time,
                    iter_time=iter_time) + time_string(), log)
-
-        print_log('loss before attack: {:.4f}'.format(attacker.loss.item()),
-                  log)
-        print_log('loss after attack: {:.4f}'.format(attacker.loss_max), log)
+        try:
+            print_log('loss before attack: {:.4f}'.format(attacker.loss.item()),
+                    log)
+            print_log('loss after attack: {:.4f}'.format(attacker.loss_max), log)
+        except:
+            pass
+        
         print_log('bit flips: {:.0f}'.format(attacker.bit_counter), log)
         print_log('hamming_dist: {:.0f}'.format(h_dist), log)
 
