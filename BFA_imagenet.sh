@@ -25,8 +25,8 @@ model=mobilenet_v2_quan
 dataset=imagenet
 test_batch_size=256
 
-attack_sample_size=10 # number of image samples used for BFA
-n_iter=20 # maximum allowed PBS iterations
+attack_sample_size=64 # number of image samples used for BFA
+n_iter=50 # maximum allowed PBS iterations
 k_top=10 # only check k_top weights with top gradient ranking in each layer
 
 save_path=./save/${DATE}/${dataset}_${model}_BFA
@@ -42,7 +42,8 @@ $PYTHON main.py --dataset ${dataset} \
     --bfa \
     --reset_weight \
     --n_iter ${n_iter} --k_top ${k_top} \
-    --attack_sample_size ${attack_sample_size}
+    --attack_sample_size ${attack_sample_size} \
+    # --random_bfa
 } &
 ############## Tensorboard logging ##########################
 {
