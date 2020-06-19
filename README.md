@@ -1,4 +1,4 @@
-> This repository is modified from prior [repository](https://github.com/elliothe/Neural_Network_Weight_Attack ) of ICCV-2019, which includes defense codes and other codes for profiling purpose. For
+> This repository is modified from prior [repository](https://github.com/elliothe/Neural_Network_Weight_Attack ) of ICCV-2019, which includes defense codes and other codes for profiling purpose. 
   
 #  Bit-Flips Attack and Defense
   
