@@ -194,7 +194,7 @@ class quan_Linear(nn.Linear):
 #                                                 step=-1).unsqueeze(-1).float(),
 #                                 requires_grad=False)
 
-#         # self.b_w[0] = -self.b_w[0]  #in-place change MSB to negative
+#         self.b_w[0] = -self.b_w[0]  #in-place change MSB to negative
 
 
 #     def forward(self, input):
@@ -251,7 +251,7 @@ class quan_Linear(nn.Linear):
 #                                                 step=-1).unsqueeze(-1).float(),
 #                                 requires_grad=False)
 
-#         # self.b_w[0] = -self.b_w[0]  #in-place change MSB to negative
+#         self.b_w[0] = -self.b_w[0]  #in-place change MSB to negative
 
 
 #     def forward(self, input):
